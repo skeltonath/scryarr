@@ -1,4 +1,4 @@
-# PlexRecs MVP Design Document
+# Scryarr MVP Design Document
 **Type:** Local Dockerized Go Service  
 **Audience:** Claude (Implementation Instruction)  
 **Version:** MVP-Final (v1.0)
@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-Implement a local service named **PlexRecs**.  
+Implement a local service named **Scryarr**.  
 Its purpose is to automatically generate movie and TV recommendations for a local Plex library based on Plex watch history (via Tautulli). The service will use metadata from TMDb/TVDb and request recommendation candidates from an LLM.
 
 You must build the service in Go as a single Dockerized binary.  
@@ -72,7 +72,7 @@ app:
   log_level: info
 
 paths:
-  db_path: /data/plexrecs.sqlite
+  db_path: /data/scryarr.sqlite
   json_out_dir: /data/recommendations
   pmm_out_dir: /output
 

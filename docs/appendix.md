@@ -1,4 +1,4 @@
-# Appendix: Implementation References for PlexRecs
+# Appendix: Implementation References for Scryarr
 
 ## A. Core Integrations
 
@@ -63,7 +63,7 @@ Use `POST /api/v1/request` to create requests. Auth via `X-Api-Key`.
 ## E. Folder Layout
 
 ```
-plexrecs/
+scryarr/
   cmd/
     worker/main.go
   internal/
@@ -79,7 +79,7 @@ plexrecs/
     app.yml
     categories.yml
   data/
-    plexrecs.sqlite
+    scryarr.sqlite
     recommendations/
   output/
     recommended__*.yml
