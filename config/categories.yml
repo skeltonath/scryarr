@@ -1,0 +1,58 @@
+categories:
+  # Genre-based recommendation
+  - label: "True Crime"
+    type: "genre"
+    media_types: ["movie", "tv"]
+    tmdb_filters:
+      include_genres: ["Documentary", "Crime"]
+    keywords_prefer: ["true crime", "investigative journalism", "fraud", "forensics", "cold case"]
+    keywords_avoid: ["mockumentary"]
+
+  # Title seed - "Because you watched..."
+  - label: "Because — The Jinx"
+    type: "title_seed"
+    media_types: ["tv", "movie"]
+    seed:
+      title: "The Jinx: The Life and Deaths of Robert Durst"
+      year: 2015
+      medium: "tv"
+
+  # Mood/keyword based
+  - label: "Cozy"
+    type: "keyword"
+    media_types: ["movie", "tv"]
+    mood_keywords: ["cozy", "gentle", "uplifting", "low-stakes", "comfort watch"]
+    tmdb_filters:
+      exclude_genres: ["Horror", "War", "Thriller"]
+
+  # Multiple seed titles
+  - label: "DP Favorites — Crime Seeds"
+    type: "seed_list"
+    media_types: ["movie", "tv"]
+    seeds:
+      - title: "The Imposter"
+        year: 2012
+        medium: "movie"
+      - title: "Murder on Middle Beach"
+        year: 2020
+        medium: "tv"
+      - title: "American Murder: The Family Next Door"
+        year: 2020
+        medium: "movie"
+
+  # Sci-fi recommendations
+  - label: "Sci-Fi Gems"
+    type: "genre"
+    media_types: ["movie", "tv"]
+    tmdb_filters:
+      include_genres: ["Science Fiction"]
+    keywords_prefer: ["cerebral", "philosophical", "thought-provoking", "dystopian"]
+    keywords_avoid: ["superhero", "action-heavy"]
+
+  # Feel-good movies
+  - label: "Feel Good"
+    type: "keyword"
+    media_types: ["movie"]
+    mood_keywords: ["feel-good", "heartwarming", "inspirational", "optimistic"]
+    tmdb_filters:
+      exclude_genres: ["Horror", "Thriller", "War"]

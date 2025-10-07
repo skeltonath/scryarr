@@ -1,0 +1,35 @@
+app:
+  mode: oneshot              # oneshot | loop
+  schedule_cron: "0 3 * * *" # Daily at 3 AM (used if mode=loop)
+  log_level: info            # debug | info | warn | error
+
+paths:
+  db_path: /data/scryarr.sqlite
+  json_out_dir: /data/recommendations
+  pmm_out_dir: /output
+
+tautulli:
+  url: "http://tautulli:8181"
+  # API key loaded from TAUTULLI_API_KEY env var
+  lookback_days: 120
+
+plex:
+  url: "http://plex:32400"
+  # Token loaded from PLEX_TOKEN env var
+
+recommender:
+  model: "gpt-4o-mini"
+  recs_per_category: 20
+  diversity_min_fraction: 0.3
+  recency_weight: 0.6
+  allow_media_types: ["movie", "tv"]
+
+overseerr:
+  enabled: false
+  url: "http://overseerr:5055"
+  # API key loaded from OVERSEERR_API_KEY env var
+  requests_per_category: 0
+
+api:
+  enabled: true
+  bind_addr: "0.0.0.0:8080"

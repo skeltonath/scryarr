@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  scryarr:
+    build: .
+    container_name: scryarr
+    restart: unless-stopped
+
+    volumes:
+      - ./config:/config
+      - ./data:/data
+      - ./output:/output
+
+    environment:
+      # Required: API Keys and Tokens
+      - TAUTULLI_API_KEY=${TAUTULLI_API_KEY}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - LLM_API_BASE=${LLM_API_BASE}
+      - LLM_API_KEY=${LLM_API_KEY}
+
+      # Optional: Overseerr
+      - OVERSEERR_API_KEY=${OVERSEERR_API_KEY}
+
+      # Optional: Development mode
+      # - ENV=development
+
+      # Optional: Timezone
+      - TZ=America/New_York
+
+    ports:
+      - "8080:8080"
+
+    # Optional: Resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 512M
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 256M
+
+    # Optional: Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
