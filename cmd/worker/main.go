@@ -164,19 +164,34 @@ func (o *Orchestrator) Run() error {
 	resolver := resolve.NewResolver(tmdbClient, o.store)
 	publisher := publish.NewPublisher(o.appCfg.Paths.JSONOutDir, o.appCfg.Paths.PMMOutDir)
 
-	// Fetch Plex inventory
+	// Load cached TMDb IDs from database
+	cachedTMDbIDs, err := o.store.GetPlexInventoryCache()
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to load Plex inventory cache")
+		cachedTMDbIDs = make(map[string]int)
+	}
+	log.Info().Int("cached_items", len(cachedTMDbIDs)).Msg("Loaded TMDb ID cache")
+
+	// Fetch Plex inventory (cache reduces API calls for TV shows)
 	log.Info().Msg("Fetching Plex inventory")
-	inventory, err := plexClient.GetInventory()
+	inventory, err := plexClient.GetInventory(cachedTMDbIDs)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to fetch Plex inventory, continuing without it")
 	} else {
-		var items []struct{ TMDbID int; MediaType string }
+		// Store items with TMDb IDs in database
+		var dbItems []struct{ RatingKey string; TMDbID int; MediaType string }
 		for _, item := range inventory {
-			items = append(items, struct{ TMDbID int; MediaType string }{item.TMDbID, item.Type})
+			if item.TMDbID > 0 {
+				dbItems = append(dbItems, struct{ RatingKey string; TMDbID int; MediaType string }{item.RatingKey, item.TMDbID, item.Type})
+			}
 		}
-		if err := o.store.UpdatePlexInventory(items); err != nil {
-			log.Warn().Err(err).Msg("Failed to update Plex inventory in DB")
+		if len(dbItems) > 0 {
+			if err := o.store.UpdatePlexInventory(dbItems); err != nil {
+				log.Warn().Err(err).Msg("Failed to update Plex inventory in DB")
+			}
 		}
+
+		log.Info().Int("total", len(inventory)).Int("with_tmdb_id", len(dbItems)).Msg("Plex inventory summary")
 	}
 
 	// Fetch watch history for taste profile

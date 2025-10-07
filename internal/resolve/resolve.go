@@ -2,6 +2,7 @@ package resolve
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dppeppel/scryarr/internal/llm"
@@ -68,8 +69,8 @@ func (r *Resolver) Resolve(llmResp *llm.LLMResponse, categoryLabel string) (*Res
 	}
 
 	for _, rec := range llmResp.Recommendations {
-		// Normalize media type
-		mediaType := rec.Medium
+		// Normalize media type (handle various formats from LLM)
+		mediaType := strings.ToLower(rec.Medium)
 		if mediaType == "show" || mediaType == "series" {
 			mediaType = "tv"
 		}
@@ -87,13 +88,13 @@ func (r *Resolver) Resolve(llmResp *llm.LLMResponse, categoryLabel string) (*Res
 			continue
 		}
 
-		// Check if in Plex inventory
+		// Check if in Plex inventory by TMDb ID
 		inPlex, err := r.store.IsInPlexInventory(result.TMDbID, mediaType)
 		if err != nil {
 			log.Warn().Err(err).Msg("failed to check Plex inventory")
 		}
 		if inPlex {
-			log.Debug().Str("title", result.Title).Msg("skipping item already in Plex")
+			log.Debug().Str("title", result.Title).Int("tmdb_id", result.TMDbID).Msg("skipping item already in Plex")
 			continue
 		}
 

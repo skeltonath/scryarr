@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -83,15 +84,29 @@ func (s *Store) initSchema() error {
 
 	CREATE TABLE IF NOT EXISTS plex_inventory (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		rating_key TEXT NOT NULL,
 		tmdb_id INTEGER NOT NULL,
 		media_type TEXT CHECK (media_type IN ('movie','tv')),
 		present_at TEXT NOT NULL
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS ix_inventory_tmdb ON plex_inventory(tmdb_id, media_type);
+	CREATE UNIQUE INDEX IF NOT EXISTS ix_inventory_ratingkey ON plex_inventory(rating_key);
 	`
 
-	_, err := s.db.Exec(schema)
-	return err
+	if _, err := s.db.Exec(schema); err != nil {
+		return err
+	}
+
+	// Migration: Add rating_key column if it doesn't exist
+	_, err := s.db.Exec(`
+		ALTER TABLE plex_inventory ADD COLUMN rating_key TEXT DEFAULT '';
+	`)
+	// Ignore error if column already exists
+	if err != nil && !strings.Contains(err.Error(), "duplicate column name") {
+		return err
+	}
+
+	return nil
 }
 
 // JobRun represents a job run record
@@ -392,7 +407,7 @@ func (s *Store) GetTitleResolution(title string, year int, mediaType string) (*T
 }
 
 // UpdatePlexInventory refreshes the Plex inventory table
-func (s *Store) UpdatePlexInventory(items []struct{ TMDbID int; MediaType string }) error {
+func (s *Store) UpdatePlexInventory(items []struct{ RatingKey string; TMDbID int; MediaType string }) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -405,7 +420,7 @@ func (s *Store) UpdatePlexInventory(items []struct{ TMDbID int; MediaType string
 	}
 
 	// Insert new inventory
-	stmt, err := tx.Prepare("INSERT INTO plex_inventory (tmdb_id, media_type, present_at) VALUES (?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO plex_inventory (rating_key, tmdb_id, media_type, present_at) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
@@ -413,7 +428,7 @@ func (s *Store) UpdatePlexInventory(items []struct{ TMDbID int; MediaType string
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	for _, item := range items {
-		if _, err := stmt.Exec(item.TMDbID, item.MediaType, now); err != nil {
+		if _, err := stmt.Exec(item.RatingKey, item.TMDbID, item.MediaType, now); err != nil {
 			return err
 		}
 	}
@@ -429,4 +444,24 @@ func (s *Store) IsInPlexInventory(tmdbID int, mediaType string) (bool, error) {
 		tmdbID, mediaType,
 	).Scan(&count)
 	return count > 0, err
+}
+
+// GetPlexInventoryCache retrieves TMDb IDs by rating key from the inventory cache
+func (s *Store) GetPlexInventoryCache() (map[string]int, error) {
+	rows, err := s.db.Query("SELECT rating_key, tmdb_id FROM plex_inventory WHERE rating_key != ''")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	cache := make(map[string]int) // Key: rating_key -> TMDb ID
+	for rows.Next() {
+		var ratingKey string
+		var tmdbID int
+		if err := rows.Scan(&ratingKey, &tmdbID); err != nil {
+			return nil, err
+		}
+		cache[ratingKey] = tmdbID
+	}
+	return cache, rows.Err()
 }
